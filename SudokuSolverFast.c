@@ -202,14 +202,25 @@ int check_if_move_valid(num_t* board, mdata_t* moveArray, int ind, int val){
 	else return get_mdata_val(moveArray[ind],val); //Finally, check if that is a possible move at this position
 }
 
+//Find the index with the fewest number of moves
+int find_ind_with_fewest_moves(num_t* board, num_t* moveNumArray){
+	int smallest = 99999;
+	for(int ind = 0; ind < BOARD_SPACE_NUM; ind++){
+		if(moveNumArray[ind] < smallest && !board_get_val(board,ind)) smallest = ind;
+	}
+
+	if(smallest == 99999) return -1;
+	else return smallest;
+}
+
 //Just iterate through the board and find places where there is only one possible move, do that move, and repeat until you can't find any
-void do_forced_moves(num_t* board, mdata_t* moveArray, num_t* moveNumArray, int startInd){
+void do_forced_moves(num_t* board, mdata_t* moveArray, num_t* moveNumArray){
 
 	int hasForcedMoves;
 
 	do {
 		hasForcedMoves = 0;
-		for(int ind = startInd; ind < BOARD_SPACE_NUM; ind++){
+		for(int ind = 0; ind < BOARD_SPACE_NUM; ind++){
 
 			if(moveNumArray[ind] == 1 && !board_get_val(board,ind)){
 				for(int val = 1; val <= BOARD_LEN; val++){
@@ -349,25 +360,25 @@ void find_hidden_pairs(num_t* board, mdata_t* moveArray, num_t* moveNumArray){
 }
 
 int check_board_validity(num_t* board){
-	int 
 
 	for(int clique = 0; clique < CLIQUE_NUM; clique++){
-		
+
 	}
 }
 
-int solve_board(num_t* board, mdata_t* moveArray, num_t* moveNumArray, int ind){
+int solve_board(num_t* board, mdata_t* moveArray, num_t* moveNumArray){
 
-	//printf("\n");
+	//printf("\n\n");
 	//print_board(board);
 	//print_moves_list(moveArray,moveNumArray);
 
 	num_t newBoard[BOARD_SPACE_NUM];
 	mdata_t newMovesArray[BOARD_SPACE_NUM];
 	num_t newMoveNumArray[BOARD_SPACE_NUM];
+	int ind;
 
 	//First, do all the forced moves (places where it's only possible to put 1 number)
-	do_forced_moves(board,moveArray,moveNumArray,ind);
+	do_forced_moves(board,moveArray,moveNumArray);
 	//printf("Forced moves done\n");
 	//print_board(board);
 
@@ -381,10 +392,15 @@ int solve_board(num_t* board, mdata_t* moveArray, num_t* moveNumArray, int ind){
 	//print_board(board);
 
 	//Then, update the current ind until you find an empty space
-	while(ind < BOARD_SPACE_NUM && board_get_val(board,ind)) ind++;
+	//while(ind < BOARD_SPACE_NUM && board_get_val(board,ind)) ind++;
+	ind = find_ind_with_fewest_moves(board,moveNumArray);
 
 	//If you can't find an empty space, the board is solved
-	if(ind >= BOARD_SPACE_NUM){
+	/*if(ind >= BOARD_SPACE_NUM){
+		memcpy(finalBoard,board,BOARD_SPACE_NUM*sizeof(num_t));
+		return 1;
+	}*/
+	if(ind == -1){
 		memcpy(finalBoard,board,BOARD_SPACE_NUM*sizeof(num_t));
 		return 1;
 	}
@@ -403,7 +419,7 @@ int solve_board(num_t* board, mdata_t* moveArray, num_t* moveNumArray, int ind){
 
 				board_do_move(newBoard,newMovesArray,newMoveNumArray,ind,val);
 
-				if(solve_board(newBoard,newMovesArray,newMoveNumArray,ind+1)) return 1;
+				if(solve_board(newBoard,newMovesArray,newMoveNumArray)) return 1;
 			}
 		}
 	} else { //If there aren't any possible moves at that empty space, you messed up, so start backtracking
@@ -483,7 +499,7 @@ int main(int argc, char** argv){
 	memcpy(finalBoard,board,BOARD_SPACE_NUM*sizeof(num_t));
 
 	startTime = get_current_milliseconds();
-	solutionFound = solve_board(board,moveArray,moveNumArray,0);
+	solutionFound = solve_board(board,moveArray,moveNumArray);
 	endTime = get_current_milliseconds();
 	print_board(finalBoard);
 	//print_moves_list(moveArray);
