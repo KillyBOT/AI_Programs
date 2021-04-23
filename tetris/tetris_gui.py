@@ -19,7 +19,8 @@ PIECE_PADDING = CELL_LENGTH//8
 SCREEN_WIDTH = CELL_LENGTH * int((GAME_WIDTH * 1.5)) + BORDER_PADDING
 SCREEN_HEIGHT = (CELL_LENGTH * GAME_HEIGHT) + BORDER_PADDING*2
 
-SOFT_DROP_SPEED = 8
+DAS_TIME = 15
+AUTO_REPEAT_RATE = 5
 
 FONT_SIZE = 36
 
@@ -50,6 +51,8 @@ class tetris_gui():
 		self.game = tetris_game(level)
 		self.ticks = 0
 		self.get_appropriate_update_time()
+		self.ticks_left = 0
+		self.ticks_right = 0
 
 		self.font = pygame.font.Font(None,36)
 
@@ -74,25 +77,37 @@ class tetris_gui():
 
 			elif event.type == pygame.KEYDOWN:
 
-				if event.key == pygame.K_LEFT:
-					self.game.move_current_left()
-
-				elif event.key == pygame.K_RIGHT:
-					self.game.move_current_right()
-
-				elif event.key == pygame.K_UP:
+				if event.key == pygame.K_UP:
 					self.game.rotate_current()
 
-				elif event.key == pygame.K_c:
+				if event.key == pygame.K_c:
 					self.game.swap_to_held()
 
-				elif event.key == pygame.K_SPACE:
+				if event.key == pygame.K_SPACE:
 					self.game.dropType = 2
 
 		keys = pygame.key.get_pressed()
 
 		if keys[pygame.K_DOWN]:
 			self.game.dropType = 1
+
+		if keys[pygame.K_LEFT] and not keys[pygame.K_RIGHT]:
+			if not self.ticks_left or (self.ticks_left > DAS_TIME and not self.ticks_left % AUTO_REPEAT_RATE):
+				self.game.move_current_left()
+
+			self.ticks_left += 1
+		else:
+			self.ticks_left = 0
+
+		if keys[pygame.K_RIGHT] and not keys[pygame.K_LEFT]:
+			if not self.ticks_right or (self.ticks_right >= DAS_TIME and not self.ticks_right % AUTO_REPEAT_RATE):
+				self.game.move_current_right()
+
+			self.ticks_right += 1
+		else:
+			self.ticks_right = 0
+
+
 
 	def draw(self):
 
@@ -199,21 +214,14 @@ class tetris_gui():
 	def step(self):
 		self.get_input()
 
-		if self.game.dropType == 1: #Update since you're doing soft drops
-			self.timeBetweenUpdates //= SOFT_DROP_SPEED
+		#TODO: Make all of this happen in tetris_game
 
 		if self.game.dropType != 2:
-			if self.ticks >= self.timeBetweenUpdates:
-				self.game.update()
-				self.ticks = 0
+			self.game.update()
 		else: #Do a hard drop
 			current = self.game.current
 
 			while self.game.current == current:
 				self.game.update()
 
-			self.ticks = 0
-
-		self.draw()
-		self.get_appropriate_update_time()
-		self.ticks += 1
+		self.draw() #Draw the screen

@@ -25,6 +25,11 @@ PIECE_OFFSET_DICT = {
 GAME_HEIGHT = 20
 GAME_WIDTH = 10
 
+BUTTON_EMPTY = 0
+BUTTON_PRESSED = 1
+BUTTON_HELD = 2
+BUTTON_RELEASED = 3
+
 def rotate_clockwise(pos):
 	return (-pos[1],pos[0])
 
@@ -37,6 +42,17 @@ class tetris_game():
 				toAdd.append(0)
 			self.matrix.append(toAdd)
 
+		self.ticks = 0
+		self.input = {
+		"left":0,
+		"right":0,
+		"rotate_clockwise":0,
+		"rotate_counterclockwise":0,
+		"soft_drop":0,
+		"hard_drop":0,
+		"hold":0
+		}
+
 		self.score = 0
 		self.lines = 0
 		self.level = level
@@ -47,10 +63,13 @@ class tetris_game():
 		self.currentOffset = PIECE_OFFSET_DICT[self.current]
 		self.dropType = 0 #1 for soft dropping, 2 for hard dropping
 		self.canHold = True #If you already swapped what's being held with what you have, then you can't swap anymore
+		
+		self.touchedFloor = False
+		self.lockTimeRequired = 30
+		self.lockTime = 0 #Once the tetris piece touches the floor, wait some amount of ticks before locking
+		self.get_appropriate_update_time()
 
-		#Sometimes, you can't rotate or move because there's something in the way, so you need to "push" the piece into the right place
-		#self.currentPushedX = 0
-		#self.currentPushedY = 0
+		self.soft_drop_speed = 8
 
 		self.held = 0
 		self.next = randint(1,7)
@@ -90,6 +109,19 @@ class tetris_game():
 				return False
 
 		return True
+
+	def get_appropriate_update_time(self):
+		if self.level <= 8:
+			self.timeBetweenUpdates = 48 - 5*self.level
+		elif self.level <= 18:
+			self.timeBetweenUpdates = 6 - (self.level - 7)//3
+		elif self.level <= 28:
+			self.timeBetweenUpdates = 2
+		else:
+			self.timeBetweenUpdates = 1
+
+		if self.dropType == 1:
+			self.timeBetweenUpdates //= self.soft_drop_speed
 
 	def get_new_current(self): #Get the next current piece
 
@@ -238,22 +270,40 @@ class tetris_game():
 					self.matrix[x][0] = 0
 
 		#Update the score and lines.
-		self.lines+= rowsFilled
+		self.lines += rowsFilled
 		self.score += multiplierDict[rowsFilled] * self.level
+
+		#Update the level based on how many lines cleared
+		#This is based on the original NES tetris' algorithm
+		if self.lines >= (self.level * 10) + 10 or self.lines >= max(100, (self.level * 10) - 50):
+			self.level += 1
+
 
 	def update(self):
 
 		#print(self.currentPos)
 		#print(self.currentOffset)
 
-		#Check if moving the piece down will make the piece invalid
+		self.get_appropriate_update_time()
 
-		self.currentPos[1] += 1
+		if self.touchedFloor:
+			self.lockTime += 1
 
-		if not self.check_if_current_valid():
-			self.currentPos[1] -= 1
-			self.place_current()
-			self.remove_filled_rows()
-		else:
-			self.score += self.dropType
+		if self.ticks and not self.ticks % self.timeBetweenUpdates: #Should you move the piece down?
 
+			self.currentPos[1] += 1
+
+			if not self.check_if_current_valid(): #Did you touch the floor?
+				self.currentPos[1] -= 1
+
+				self.touchedFloor = True
+
+				if self.lockTime >= self.lockTimeRequired: #Only lock once self.lockTimeRequired ticks have passed
+					self.place_current()
+					self.remove_filled_rows()
+					self.lockTime = 0
+					self.touchedFloor = False
+			else:
+				self.score += self.dropType
+
+		self.ticks += 1 #Update one tick
