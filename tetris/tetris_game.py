@@ -30,6 +30,10 @@ BUTTON_PRESSED = 1
 BUTTON_HELD = 2
 BUTTON_RELEASED = 3
 
+DROP_NORMAL = 0
+DROP_SOFT = 1
+DROP_HARD = 2
+
 def rotate_clockwise(pos):
 	return (-pos[1],pos[0])
 
@@ -43,14 +47,15 @@ class tetris_game():
 			self.matrix.append(toAdd)
 
 		self.ticks = 0
+		self.ticks_DAS = 0
 		self.input = {
-		"left":0,
-		"right":0,
-		"rotate_clockwise":0,
-		"rotate_counterclockwise":0,
-		"soft_drop":0,
-		"hard_drop":0,
-		"hold":0
+		"left":BUTTON_EMPTY,
+		"right":BUTTON_EMPTY,
+		"rotate_clockwise":BUTTON_EMPTY,
+		"rotate_counterclockwise":BUTTON_EMPTY,
+		"soft_drop":BUTTON_EMPTY,
+		"hard_drop":BUTTON_EMPTY,
+		"hold":BUTTON_EMPTY
 		}
 
 		self.score = 0
@@ -67,6 +72,8 @@ class tetris_game():
 		self.touchedFloor = False
 		self.lockTimeRequired = 30
 		self.lockTime = 0 #Once the tetris piece touches the floor, wait some amount of ticks before locking
+		self.auto_repeat_rate = 4
+		self.DAS_time = self.auto_repeat_rate * 3
 		self.get_appropriate_update_time()
 
 		self.soft_drop_speed = 8
@@ -278,6 +285,50 @@ class tetris_game():
 		if self.lines >= (self.level * 10) + 10 or self.lines >= max(100, (self.level * 10) - 50):
 			self.level += 1
 
+	def get_input(self,buttons):
+		self.input = buttons
+		self.dropType = DROP_NORMAL
+
+		if self.input["rotate_clockwise"] == BUTTON_PRESSED:
+			self.rotate_current()
+		if self.input["hold"] == BUTTON_PRESSED:
+			self.swap_to_held()
+		if self.input["hard_drop"] == BUTTON_PRESSED:
+			self.dropType = DROP_HARD
+
+		if self.input["soft_drop"]:
+			self.dropType = DROP_SOFT
+
+		if self.input["left"] and not self.input["right"]:
+
+			if not self.ticks_DAS or (self.ticks_DAS > self.DAS_time and not (self.ticks_DAS % self.auto_repeat_rate)):
+				self.move_current_left()
+			self.ticks_DAS += 1
+
+		elif self.input["right"] and not self.input["left"]:
+
+			if not self.ticks_DAS or (self.ticks_DAS > self.DAS_time and not (self.ticks_DAS % self.auto_repeat_rate)):
+				self.move_current_right()
+			self.ticks_DAS += 1
+
+		else:
+			self.ticks_DAS = 0
+
+	def move_current_down(self):
+		self.currentPos[1] += 1
+
+		if not self.check_if_current_valid(): #Did you touch the floor?
+			self.currentPos[1] -= 1
+
+			self.touchedFloor = True
+
+			if self.lockTime >= self.lockTimeRequired: #Only lock once self.lockTimeRequired ticks have passed
+				self.place_current()
+				self.remove_filled_rows()
+				self.lockTime = 0
+				self.touchedFloor = False
+		else:
+			self.score += self.dropType
 
 	def update(self):
 
@@ -289,21 +340,15 @@ class tetris_game():
 		if self.touchedFloor:
 			self.lockTime += 1
 
-		if self.ticks and not self.ticks % self.timeBetweenUpdates: #Should you move the piece down?
+		if self.dropType == DROP_HARD:
+			current = self.current
+			while self.current == current:
 
-			self.currentPos[1] += 1
+				if self.touchedFloor:
+					self.lockTime += 1
+				self.move_current_down()
 
-			if not self.check_if_current_valid(): #Did you touch the floor?
-				self.currentPos[1] -= 1
-
-				self.touchedFloor = True
-
-				if self.lockTime >= self.lockTimeRequired: #Only lock once self.lockTimeRequired ticks have passed
-					self.place_current()
-					self.remove_filled_rows()
-					self.lockTime = 0
-					self.touchedFloor = False
-			else:
-				self.score += self.dropType
+		elif self.ticks and not self.ticks % self.timeBetweenUpdates: #Should you move the piece down?
+			self.move_current_down()
 
 		self.ticks += 1 #Update one tick

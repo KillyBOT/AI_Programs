@@ -49,10 +49,17 @@ class tetris_gui():
 		self.screen = pygame.display.set_mode((SCREEN_WIDTH,SCREEN_HEIGHT))
 		self.surface = pygame.Surface((SCREEN_WIDTH,SCREEN_HEIGHT))
 		self.game = tetris_game(level)
-		self.ticks = 0
 		self.get_appropriate_update_time()
-		self.ticks_left = 0
-		self.ticks_right = 0
+		
+		self.pressed = {
+		"left":0,
+		"right":0,
+		"rotate_clockwise":0,
+		"rotate_counterclockwise":0,
+		"soft_drop":0,
+		"hard_drop":0,
+		"hold":0
+		}
 
 		self.font = pygame.font.Font(None,36)
 
@@ -68,7 +75,7 @@ class tetris_gui():
 
 	def get_input(self):
 
-		self.game.dropType = 0
+		"""self.game.dropType = 0
 
 		for event in pygame.event.get():
 
@@ -105,8 +112,47 @@ class tetris_gui():
 
 			self.ticks_right += 1
 		else:
-			self.ticks_right = 0
+			self.ticks_right = 0"""
 
+		finalButtons = {
+			"left":0,
+			"right":0,
+			"rotate_clockwise":0,
+			"rotate_counterclockwise":0,
+			"soft_drop":0,
+			"hard_drop":0,
+			"hold":0
+			}
+
+		buttonMapping = {
+			"left":pygame.K_LEFT,
+			"right":pygame.K_RIGHT,
+			"rotate_clockwise":pygame.K_UP,
+			"rotate_counterclockwise":pygame.K_w,
+			"soft_drop":pygame.K_DOWN,
+			"hard_drop":pygame.K_SPACE,
+			"hold":pygame.K_c
+			}
+
+		for event in pygame.event.get():
+
+			if event.type == pygame.QUIT:
+				self.game.done = True
+
+		keys = pygame.key.get_pressed()
+
+		for label,button in buttonMapping.items():
+
+			if keys[button]:
+				if not self.pressed[label]:
+					finalButtons[label] = 1
+					self.pressed[label] = 1
+				else:
+					finalButtons[label] = 2
+			else:
+				self.pressed[label] = 0
+
+		self.game.get_input(finalButtons)
 
 
 	def draw(self):
@@ -214,14 +260,6 @@ class tetris_gui():
 	def step(self):
 		self.get_input()
 
-		#TODO: Make all of this happen in tetris_game
-
-		if self.game.dropType != 2:
-			self.game.update()
-		else: #Do a hard drop
-			current = self.game.current
-
-			while self.game.current == current:
-				self.game.update()
+		self.game.update()
 
 		self.draw() #Draw the screen
