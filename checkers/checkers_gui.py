@@ -29,6 +29,7 @@ class Checkers_Gui():
 		self.color_king = (255,255,0)
 		self.font_size = 36
 		self.font = pygame.font.Font(None,self.font_size)
+		self.game_over_font = pygame.font.Font(None,self.font_size*3)
 
 		self.update_screen = True
 		self.selected_piece = None
@@ -152,7 +153,7 @@ class Checkers_Gui():
 
 
 
-	def draw(self):
+	def draw(self,draw_game_over = False):
 		#Draw checkerboard pattern
 
 		checkerboardSurface = pygame.Surface((self.screen_width,self.screen_height))
@@ -215,6 +216,16 @@ class Checkers_Gui():
 		self.draw_piece(self.game.current_player,8,3.5,False)
 		self.draw_moves()
 
+		#Draw game over, if you should
+		if draw_game_over:
+			if self.game.get_state() == 2:
+				winnerText = "Draw!"
+			else:
+				winnerText = "{} wins!".format("Red" if self.game.get_state() == PLAYER_DARK else "White")
+
+			gameOverLabel = self.game_over_font.render(winnerText,True,(0,0,0))
+			self.screen.blit(gameOverLabel, (self.screen_width/2 - len(winnerText)*self.font_size*0.55,self.cell_size*5))
+
 		pygame.display.flip()
 
 	def update(self):
@@ -231,10 +242,8 @@ class Checkers_Gui():
 			elif currentPlayerType == PLAYER_AI_RANDOM:
 				move = get_random_move(self.game)
 
-			if move:
-				self.last_click_pos = move[1][-1]
-				self.last_move = move
-
+			self.last_click_pos = move[1][-1]
+			self.last_move = move
 			self.game.do_move(move)
 			self.update_screen = True
 

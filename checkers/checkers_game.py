@@ -181,23 +181,6 @@ class Checkers_Game:
 		self.current_player = -self.current_player
 
 	def get_state(self):
-		#0 if the game is still going
-		#1 if dark won, -1 if light won
-
-		"""hasMoves = False
-
-		if self.get_moves():
-			hasMoves = True
-
-		self.current_player = -self.current_player
-
-		if self.get_moves():
-			hasMoves = True
-
-		self.current_player = -self.current_player
-
-		if not hasMoves:
-			return 2"""
 
 		if not self.get_moves():
 			darkScore = self.get_player_score(PLAYER_DARK)
@@ -205,8 +188,10 @@ class Checkers_Game:
 
 			if darkScore > lightScore:
 				return PLAYER_DARK
-			else:
+			elif darkScore < lightScore:
 				return PLAYER_LIGHT
+			else:
+				return 2
 
 		hasDark = False
 		hasLight = False

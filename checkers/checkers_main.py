@@ -8,20 +8,20 @@ def main():
 
 	pygame.init()
 
-	gui = Checkers_Gui(player_dark = PLAYER_AI_ALPHABETA, player_light = PLAYER_AI_MCTS)
+	gui = Checkers_Gui(player_dark = PLAYER_AI_MCTS, player_light = PLAYER_AI_RANDOM)
 
 	while not gui.done:
 		gui.update()
 
-	gameOverText = "Game exited"
-	if gui.game.get_state() == 1:
-		gameOverText = "Red wins!"
-	elif gui.game.get_state() == -1:
-		gameOverText = "White wins!"
-	elif gui.game.get_state() == 2:
-		gameOverText = "Draw!"
+	gui.draw(draw_game_over="True")
 
-	print(gameOverText)
+	running = True
+
+	while running:
+
+		for event in pygame.event.get():
+			if event.type == pygame.QUIT:
+				running = False				
 
 if __name__ == "__main__":
 	main()

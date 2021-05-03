@@ -4,7 +4,7 @@ import copy
 import random
 
 MAX_DEPTH = 7
-SEARCH_NUM = 500
+SEARCH_NUM = 300
 
 current_node = None
 
