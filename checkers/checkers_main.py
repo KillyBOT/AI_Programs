@@ -1,5 +1,5 @@
 from checkers_game import *
-from checkers_gui import Checkers_Gui
+from checkers_gui import *
 from copy import deepcopy
 
 import pygame
@@ -24,12 +24,17 @@ def main():
 
 	print(testGame,testGame.get_player_score(1))"""
 
-	gui = Checkers_Gui()
+	gui = Checkers_Gui(player_white = PLAYER_AI)
 	#gui.game.board[3][3] = -2
 	#gui.game.board[6][2] = 0
 
 	while not gui.done:
+
 		gui.update()
+
+		"""for event in pygame.event.get():
+			if event.type == pygame.QUIT:
+				gui.done = 2"""
 
 	gameOverText = "Draw!"
 	if gui.game.get_state() == 1:

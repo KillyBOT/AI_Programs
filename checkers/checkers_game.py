@@ -10,7 +10,8 @@ PIECE_LIGHT = -1
 PIECE_KING_DARK = 2
 PIECE_KING_LIGHT = -2
 
-MAX_DEPTH = 5
+MAX_DEPTH = 7
+#MAX_DEPTH = 4
 
 class Checkers_Game:
 	def __init__(self, setup_pieces = True):
@@ -202,19 +203,23 @@ class Checkers_Game:
 
 		return score
 
+def get_random_move(game):
+	return random.choice(game.get_moves())
+
 def get_best_move(game):
 	moveScores = []
 
 	for move in game.get_moves():
 		new = copy.deepcopy(game)
 		new.do_move(move)
-		moveScores.append((minimax(new,game.current_player,1,-1),move))
+		#moveScores.append((minimax(new,game.current_player,1,-1),move))
+		moveScores.append((alphabeta(new,game.current_player,1,-1,-99999,99999),move))
 
 	return max(moveScores)[1]
 
 def minimax(game,player,depth,isMax):
 
-	if depth > MAX_DEPTH or game.get_state():
+	if depth > MAX_DEPTH or game.get_state() or not game.get_moves():
 		return game.get_player_score(player)
 	else:
 
@@ -229,3 +234,33 @@ def minimax(game,player,depth,isMax):
 			return max(moveScores)
 		else:
 			return min(moveScores)
+
+def alphabeta(game,player,depth,isMax,alpha,beta):
+
+	if depth > MAX_DEPTH or game.get_state() or not game.get_moves():
+		return game.get_player_score(player)
+	else:
+
+		if isMax > 0:
+			bestVal = -99999
+		else:
+			bestVal = 99999
+
+		for move in game.get_moves():
+			new = copy.deepcopy(game)
+			new.do_move(move)
+
+			score = alphabeta(new,player,depth+1,-isMax,alpha,beta)
+
+			if isMax > 0:
+				bestVal = max(score,bestVal)
+				alpha = max(bestVal,alpha)
+
+			else:
+				bestVal = min(score,bestVal)
+				beta = min(bestVal,beta)
+
+			if alpha >= beta:
+				break
+
+		return bestVal
