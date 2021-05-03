@@ -10,9 +10,6 @@ PIECE_LIGHT = -1
 PIECE_KING_DARK = 2
 PIECE_KING_LIGHT = -2
 
-MAX_DEPTH = 7
-#MAX_DEPTH = 4
-
 class Checkers_Game:
 	def __init__(self, setup_pieces = True):
 
@@ -53,6 +50,21 @@ class Checkers_Game:
 		out += "Current player: " + ("Dark" if self.current_player == PLAYER_DARK else "Light") + "\n"
 
 		return out
+
+	def __eq__(self,other):
+		if self.current_player != other.current_player:
+			return False
+		if self.captured_by_dark_num != other.captured_by_dark_num:
+			return False
+		if self.captured_by_light_num != other.captured_by_light_num:
+			return False
+
+		for row in range(BOARD_LEN):
+			for col in range(BOARD_LEN):
+				if self.board[row][col] != other.board[row][col]:
+					return False
+
+		return True
 
 	def setup_pieces(self):
 		for n in range(BOARD_LEN//2):
@@ -135,40 +147,66 @@ class Checkers_Game:
 		return moves
 
 	def do_move(self,move_info):
-		pos = move_info[0]
-		moves = move_info[1]
 
-		for move in moves:
+		if move_info:
+			pos = move_info[0]
+			moves = move_info[1]
 
-			if abs(pos[0] - move[0]) > 1: #Did you do any captures?
+			for move in moves:
 
-				capturedPos = ((pos[0]+move[0])//2,(pos[1]+move[1])//2)
-				captured = self.board[capturedPos[0]][capturedPos[1]]
+				if abs(pos[0] - move[0]) > 1: #Did you do any captures?
 
-				if captured > 0:
-					self.captured_by_light_num += captured
-				elif captured < 0:
-					self.captured_by_dark_num -= captured
+					capturedPos = ((pos[0]+move[0])//2,(pos[1]+move[1])//2)
+					captured = self.board[capturedPos[0]][capturedPos[1]]
 
-				self.board[capturedPos[0]][capturedPos[1]] = 0
+					if captured > 0:
+						self.captured_by_light_num += captured
+					elif captured < 0:
+						self.captured_by_dark_num -= captured
 
-			self.board[move[0]][move[1]] = self.board[pos[0]][pos[1]]
-			self.board[pos[0]][pos[1]] = 0
-			pos = move
+					self.board[capturedPos[0]][capturedPos[1]] = 0
 
-		#Check if you should king the current piece
-		#I don't think that it's possible to have another move after being kinged, so it should be fine to put it outside the for loop
+				self.board[move[0]][move[1]] = self.board[pos[0]][pos[1]]
+				self.board[pos[0]][pos[1]] = 0
+				pos = move
 
-		if self.board[pos[0]][pos[1]] == PIECE_DARK and pos[0] == BOARD_LEN-1:
-			self.board[pos[0]][pos[1]] = PIECE_KING_DARK
-		elif self.board[pos[0]][pos[1]] == PIECE_LIGHT and pos[0] == 0:
-			self.board[pos[0]][pos[1]] = PIECE_KING_LIGHT
+			#Check if you should king the current piece
+			#I don't think that it's possible to have another move after being kinged, so it should be fine to put it outside the for loop
+
+			if self.board[pos[0]][pos[1]] == PIECE_DARK and pos[0] == BOARD_LEN-1:
+				self.board[pos[0]][pos[1]] = PIECE_KING_DARK
+			elif self.board[pos[0]][pos[1]] == PIECE_LIGHT and pos[0] == 0:
+				self.board[pos[0]][pos[1]] = PIECE_KING_LIGHT
 
 		self.current_player = -self.current_player
 
 	def get_state(self):
 		#0 if the game is still going
 		#1 if dark won, -1 if light won
+
+		"""hasMoves = False
+
+		if self.get_moves():
+			hasMoves = True
+
+		self.current_player = -self.current_player
+
+		if self.get_moves():
+			hasMoves = True
+
+		self.current_player = -self.current_player
+
+		if not hasMoves:
+			return 2"""
+
+		if not self.get_moves():
+			darkScore = self.get_player_score(PLAYER_DARK)
+			lightScore = self.get_player_score(PLAYER_LIGHT)
+
+			if darkScore > lightScore:
+				return PLAYER_DARK
+			else:
+				return PLAYER_LIGHT
 
 		hasDark = False
 		hasLight = False
@@ -187,8 +225,8 @@ class Checkers_Game:
 			return PLAYER_DARK #Dark won
 		elif hasLight and not hasDark:
 			return PLAYER_LIGHT #Light won
-		elif not self.get_moves():
-			return 2 #Draw
+		else:
+			return 0
 
 	def get_player_score(self,player):
 
@@ -202,65 +240,3 @@ class Checkers_Game:
 			score = -score
 
 		return score
-
-def get_random_move(game):
-	return random.choice(game.get_moves())
-
-def get_best_move(game):
-	moveScores = []
-
-	for move in game.get_moves():
-		new = copy.deepcopy(game)
-		new.do_move(move)
-		#moveScores.append((minimax(new,game.current_player,1,-1),move))
-		moveScores.append((alphabeta(new,game.current_player,1,-1,-99999,99999),move))
-
-	return max(moveScores)[1]
-
-def minimax(game,player,depth,isMax):
-
-	if depth > MAX_DEPTH or game.get_state() or not game.get_moves():
-		return game.get_player_score(player)
-	else:
-
-		moveScores = []
-
-		for move in game.get_moves():
-			new = copy.deepcopy(game)
-			new.do_move(move)
-			moveScores.append(minimax(new,player,depth+1,-isMax))
-
-		if isMax > 0:
-			return max(moveScores)
-		else:
-			return min(moveScores)
-
-def alphabeta(game,player,depth,isMax,alpha,beta):
-
-	if depth > MAX_DEPTH or game.get_state() or not game.get_moves():
-		return game.get_player_score(player)
-	else:
-
-		if isMax > 0:
-			bestVal = -99999
-		else:
-			bestVal = 99999
-
-		for move in game.get_moves():
-			new = copy.deepcopy(game)
-			new.do_move(move)
-
-			score = alphabeta(new,player,depth+1,-isMax,alpha,beta)
-
-			if isMax > 0:
-				bestVal = max(score,bestVal)
-				alpha = max(bestVal,alpha)
-
-			else:
-				bestVal = min(score,bestVal)
-				beta = min(bestVal,beta)
-
-			if alpha >= beta:
-				break
-
-		return bestVal

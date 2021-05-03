@@ -1,15 +1,17 @@
 from checkers_game import *
+from checkers_ai import *
 import time
 
 import pygame
 
 PLAYER_HUMAN = 0
-PLAYER_AI = 1
-PLAYER_RANDOM = 2
+PLAYER_AI_ALPHABETA = 1
+PLAYER_AI_MCTS = 2
+PLAYER_AI_RANDOM = 3
 
 class Checkers_Gui():
 
-	def __init__(self, cell_size = 80, player_black = PLAYER_HUMAN, player_white = PLAYER_HUMAN, current_player = PLAYER_DARK):
+	def __init__(self, cell_size = 80, player_dark = PLAYER_HUMAN, player_light = PLAYER_HUMAN, current_player = PLAYER_DARK):
 		self.cell_size = cell_size
 
 		self.screen_width = cell_size * 11
@@ -28,15 +30,15 @@ class Checkers_Gui():
 		self.font_size = 36
 		self.font = pygame.font.Font(None,self.font_size)
 
-
 		self.update_screen = True
 		self.selected_piece = None
 		self.selected_piece_moves = []
 		self.last_click_pos = None
+		self.last_move = None
 
 		self.game = Checkers_Game()
-		self.player_type_black = player_black
-		self.player_type_white = player_white
+		self.player_type_dark = player_dark
+		self.player_type_light = player_light
 		self.done = False
 
 		self.draw()
@@ -53,7 +55,7 @@ class Checkers_Gui():
 		for event in pygame.event.get():
 
 			if event.type == pygame.QUIT:
-				self.done = 2
+				self.done = 3
 
 			elif event.type == pygame.MOUSEBUTTONDOWN:
 
@@ -82,6 +84,7 @@ class Checkers_Gui():
 						for move in self.selected_piece_moves:
 							if (row,col) == move[1][-1]:
 								self.game.do_move(move)
+								self.last_move = move
 								self.done = self.game.get_state()
 								break
 
@@ -120,27 +123,36 @@ class Checkers_Gui():
 		lineSurface = pygame.Surface((self.screen_width,self.screen_height),pygame.SRCALPHA)
 
 		for moveInfo in self.selected_piece_moves:
+			self.draw_move(moveInfo)
 
-			initPos = moveInfo[0]
-			prevPos = moveInfo[0]
-			moves = moveInfo[1]
+		if self.last_move:
+			#self.draw_piece(self.game.board[self.last_move[1][-1][0]][self.last_move[1][-1][1]], self.last_move[0][0], self.last_move[0][1], True)
+			self.draw_move(self.last_move,should_draw_piece = False)
+			
 
-			for move in moves:
-				x1 = prevPos[1] * self.cell_size + self.cell_size*2
-				y1 = (BOARD_LEN-prevPos[0]-1) * self.cell_size + self.cell_size*2
-				x2 = move[1] * self.cell_size + self.cell_size*2
-				y2 = (BOARD_LEN-move[0]-1) * self.cell_size + self.cell_size*2
+	def draw_move(self,move_info,should_draw_piece = True):
+		lineSurface = pygame.Surface((self.screen_width,self.screen_height),pygame.SRCALPHA)
+		initPos = move_info[0]
+		prevPos = move_info[0]
+		moves = move_info[1]
 
-				pygame.draw.line(lineSurface,(0,0,0),(x1,y1),(x2,y2),width=5)
+		for move in moves:
+			x1 = prevPos[1] * self.cell_size + self.cell_size*2
+			y1 = (BOARD_LEN-prevPos[0]-1) * self.cell_size + self.cell_size*2
+			x2 = move[1] * self.cell_size + self.cell_size*2
+			y2 = (BOARD_LEN-move[0]-1) * self.cell_size + self.cell_size*2
 
-				prevPos = move
+			pygame.draw.line(lineSurface,(0,0,0),(x1,y1),(x2,y2),width=5)
 
+			prevPos = move
+
+		if should_draw_piece:
 			self.draw_piece(self.game.board[initPos[0]][initPos[1]],moves[-1][0],moves[-1][1],True)
-
 		self.screen.blit(lineSurface,(0,0))
 
 
-	def draw_board(self):
+
+	def draw(self):
 		#Draw checkerboard pattern
 
 		checkerboardSurface = pygame.Surface((self.screen_width,self.screen_height))
@@ -164,7 +176,9 @@ class Checkers_Gui():
 
 		self.screen.blit(checkerboardSurface,(0,0))
 
+
 		#Draw text
+
 		horTextList = ["a","b","c","d","e","f","g","h"]
 
 		for offset in range(BOARD_LEN):
@@ -186,6 +200,11 @@ class Checkers_Gui():
 		currentPlayerLabel = self.font.render("Current player:",True,(0,0,0))
 		self.screen.blit(currentPlayerLabel, (self.screen_width/2 - self.font_size*2.5,self.font_size/2))
 
+		darkScoreLabel = self.font.render("Red score: {}".format(self.game.get_player_score(PLAYER_DARK)),True,(0,0,0))
+		self.screen.blit(darkScoreLabel, (self.cell_size * 2, self.cell_size*10))
+		lightScoreLabel = self.font.render("White score: {}".format(self.game.get_player_score(PLAYER_LIGHT)),True,(0,0,0))
+		self.screen.blit(lightScoreLabel, (self.cell_size * 2, self.cell_size*10 + self.font_size))
+
 		#Draw pieces
 
 		for row in range(BOARD_LEN):
@@ -194,29 +213,28 @@ class Checkers_Gui():
 					self.draw_piece(self.game.board[row][col],row,col,False)
 
 		self.draw_piece(self.game.current_player,8,3.5,False)
-
-		if self.selected_piece:
-			self.draw_moves()
-
-		#Draw text
-
-	def draw(self):
-		self.draw_board()
+		self.draw_moves()
 
 		pygame.display.flip()
 
 	def update(self):
 
-		currentPlayerType = self.player_type_black if self.game.current_player == PLAYER_DARK else self.player_type_white
+		currentPlayerType = self.player_type_dark if self.game.current_player == PLAYER_DARK else self.player_type_light
 
 		if currentPlayerType == PLAYER_HUMAN:
 			self.get_input()
 		else:
-			if currentPlayerType == PLAYER_AI:
-				move = get_best_move(self.game)
-			elif currentPlayerType == PLAYER_RANDOM:
+			if currentPlayerType == PLAYER_AI_ALPHABETA:
+				move = get_best_move_alphabeta(self.game)
+			elif currentPlayerType == PLAYER_AI_MCTS:
+				move = get_best_move_mcts(self.game)
+			elif currentPlayerType == PLAYER_AI_RANDOM:
 				move = get_random_move(self.game)
-			self.last_click_pos = move[1][-1]
+
+			if move:
+				self.last_click_pos = move[1][-1]
+				self.last_move = move
+
 			self.game.do_move(move)
 			self.update_screen = True
 
@@ -224,12 +242,3 @@ class Checkers_Gui():
 			self.draw()
 			self.done = self.game.get_state()
 			self.update_screen = False
-
-		#Two AIs play against themselves
-		"""self.game.do_move(get_best_move(self.game))
-		self.draw()
-		time.sleep(0.1)
-
-		self.game.do_move(get_random_move(self.game))
-		self.draw()
-		time.sleep(0.1)"""
