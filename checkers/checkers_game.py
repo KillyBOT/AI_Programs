@@ -183,11 +183,11 @@ class Checkers_Game:
 					return 0
 
 		if hasDark and not hasLight:
-			return PLAYER_DARK
+			return PLAYER_DARK #Dark won
 		elif hasLight and not hasDark:
-			return PLAYER_LIGHT
-		else:
-			return 0 #This should never happen
+			return PLAYER_LIGHT #Light won
+		elif not self.get_moves():
+			return 2 #Draw
 
 	def get_player_score(self,player):
 
@@ -229,5 +229,3 @@ def minimax(game,player,depth,isMax):
 			return max(moveScores)
 		else:
 			return min(moveScores)
-
-

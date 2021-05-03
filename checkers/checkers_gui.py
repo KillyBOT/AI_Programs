@@ -1,4 +1,5 @@
 from checkers_game import *
+import time
 
 import pygame
 
@@ -15,6 +16,7 @@ class Checkers_Gui():
 		self.color_background = (196,196,196)
 		self.color_checkerboard_light = (64,196,64)
 		self.color_checkerboard_dark = (64,128,64)
+		self.color_checkerboard_last_move = (255,128,0)
 		self.color_piece_dark = (255,0,0)
 		self.color_piece_light = (255,255,255)
 		self.color_king = (255,255,0)
@@ -22,6 +24,7 @@ class Checkers_Gui():
 		self.update_screen = True
 		self.selected_piece = None
 		self.selected_piece_moves = []
+		self.last_click_pos = None
 
 		self.game = Checkers_Game()
 		self.done = False
@@ -47,6 +50,12 @@ class Checkers_Gui():
 				self.update_screen = True
 
 				if row >= 0 and col >= 0 and row < BOARD_LEN and col < BOARD_LEN:
+
+					if self.last_click_pos and self.last_click_pos == (row,col):
+						self.last_click_pos = None
+					else:
+						self.last_click_pos = (row,col)
+
 					if not self.selected_piece and self.game.board[row][col]:
 						self.selected_piece = (self.game.board[row][col],row,col)
 						self.selected_piece_moves.clear()
@@ -139,6 +148,12 @@ class Checkers_Gui():
 
 				pygame.draw.rect(checkerboardSurface,color,pygame.Rect(x,y,self.cell_size,self.cell_size))
 
+		if self.last_click_pos:
+			x = self.last_click_pos[1] * self.cell_size + self.cell_size*1.5
+			y = (BOARD_LEN-self.last_click_pos[0]-1) * self.cell_size + self.cell_size*1.5
+
+			pygame.draw.rect(checkerboardSurface,self.color_checkerboard_last_move,pygame.Rect(x,y,self.cell_size,self.cell_size))
+
 		self.screen.blit(checkerboardSurface,(0,0))
 
 		#Draw pieces
@@ -161,7 +176,9 @@ class Checkers_Gui():
 	def update(self):
 
 		if self.game.current_player != PLAYER_DARK:
-			self.game.do_move(get_best_move(self.game))
+			bestMove = get_best_move(self.game)
+			self.last_click_pos = bestMove[1][-1]
+			self.game.do_move(bestMove)
 			self.update_screen = True
 		else:
 			self.get_input()
@@ -170,3 +187,8 @@ class Checkers_Gui():
 			self.draw()
 			self.done = self.game.get_state()
 			self.update_screen = False
+
+		#Two AIs play against themselves
+		"""self.game.do_move(get_best_move(self.game))
+		self.draw()
+		time.sleep(0.5)"""

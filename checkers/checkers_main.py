@@ -31,7 +31,13 @@ def main():
 	while not gui.done:
 		gui.update()
 
-	print("{} wins!".format("White" if gui.game.get_state() == -1 else "Red"))
+	gameOverText = "Draw!"
+	if gui.game.get_state() == 1:
+		gameOverText = "Red wins!"
+	elif gui.game.get_state() == -1:
+		gameOverText = "White wins!"
+
+	print(gameOverText)
 
 
 if __name__ == "__main__":
