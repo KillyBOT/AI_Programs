@@ -27,7 +27,7 @@ class Checkers_Gui():
 		self.color_piece_dark = (255,0,0)
 		self.color_piece_light = (255,255,255)
 		self.color_king = (255,255,0)
-		self.font_size = 36
+		self.font_size = self.cell_size // 2
 		self.font = pygame.font.Font(None,self.font_size)
 		self.game_over_font = pygame.font.Font(None,self.font_size*3)
 
@@ -105,7 +105,7 @@ class Checkers_Gui():
 			pieceSurface.set_alpha(128)
 
 		pieceRadiusOuter = (self.cell_size / 2) * 0.80
-		pieceRadiusInner = (self.cell_size / 2) * 0.75
+		pieceRadiusInner = (self.cell_size / 2) * 0.70
 		pieceRadiusKing = (self.cell_size / 2) * 0.5
 
 		if piece_type ** 2 == 4: #Draw king piece
@@ -150,8 +150,6 @@ class Checkers_Gui():
 		if should_draw_piece:
 			self.draw_piece(self.game.board[initPos[0]][initPos[1]],moves[-1][0],moves[-1][1],True)
 		self.screen.blit(lineSurface,(0,0))
-
-
 
 	def draw(self,draw_game_over = False):
 		#Draw checkerboard pattern
@@ -199,7 +197,7 @@ class Checkers_Gui():
 			self.screen.blit(horLabel,(horX,horY))
 
 		currentPlayerLabel = self.font.render("Current player:",True,(0,0,0))
-		self.screen.blit(currentPlayerLabel, (self.screen_width/2 - self.font_size*2.5,self.font_size/2))
+		self.screen.blit(currentPlayerLabel, (self.screen_width/2 - self.font_size*2.55,self.font_size/2))
 
 		darkScoreLabel = self.font.render("Red score: {}".format(self.game.captured_by_dark_num),True,(0,0,0))
 		self.screen.blit(darkScoreLabel, (self.cell_size * 2, self.cell_size*10))

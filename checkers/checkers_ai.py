@@ -8,6 +8,8 @@ SEARCH_NUM = 1000
 
 current_node = None
 
+EXPLORATION_PARAMETER = math.sqrt(2)
+
 #MAX_DEPTH = 4
 
 class MCTS_Node:
@@ -18,6 +20,8 @@ class MCTS_Node:
 		self.parent = parent
 		self.children = []
 
+		self.upperChildBound = len(self.game.get_moves())
+
 	def is_leaf(self):
 		if self.game.get_state():
 			return True
@@ -25,10 +29,10 @@ class MCTS_Node:
 		return False
 
 	def ucb1(self):
-		return self.w/self.s + math.sqrt(2) * math.sqrt(math.log(self.parent.s)/self.s)
+		return self.w/self.s + EXPLORATION_PARAMETER * math.sqrt(math.log(self.parent.s)/self.s)
 
 	def select(self):
-		if self.is_leaf() or len(self.game.get_moves()) > len(self.children):
+		if self.is_leaf() or self.upperChildBound > len(self.children):
 			return self
 		else:
 			bestNode = self.children[0]

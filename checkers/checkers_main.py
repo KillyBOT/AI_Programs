@@ -8,7 +8,7 @@ def main():
 
 	pygame.init()
 
-	gui = Checkers_Gui(player_dark = PLAYER_AI_ALPHABETA, player_light = PLAYER_AI_RANDOM)
+	gui = Checkers_Gui(player_dark = PLAYER_AI_MCTS, player_light = PLAYER_AI_RANDOM)
 
 	while not gui.done:
 		gui.update()
