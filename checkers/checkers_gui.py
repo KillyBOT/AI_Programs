@@ -201,9 +201,9 @@ class Checkers_Gui():
 		currentPlayerLabel = self.font.render("Current player:",True,(0,0,0))
 		self.screen.blit(currentPlayerLabel, (self.screen_width/2 - self.font_size*2.5,self.font_size/2))
 
-		darkScoreLabel = self.font.render("Red score: {}".format(self.game.get_player_score(PLAYER_DARK)),True,(0,0,0))
+		darkScoreLabel = self.font.render("Red score: {}".format(self.game.captured_by_dark_num),True,(0,0,0))
 		self.screen.blit(darkScoreLabel, (self.cell_size * 2, self.cell_size*10))
-		lightScoreLabel = self.font.render("White score: {}".format(self.game.get_player_score(PLAYER_LIGHT)),True,(0,0,0))
+		lightScoreLabel = self.font.render("White score: {}".format(self.game.captured_by_light_num),True,(0,0,0))
 		self.screen.blit(lightScoreLabel, (self.cell_size * 2, self.cell_size*10 + self.font_size))
 
 		#Draw pieces

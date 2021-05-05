@@ -66,6 +66,25 @@ class Checkers_Game:
 
 		return True
 
+	def __iter__(self):
+
+		yield self.current_player
+		yield self.captured_by_dark_num
+		yield self.captured_by_light_num
+
+		for row in range(BOARD_LEN):
+			for col in range(BOARD_LEN):
+				yield self.board[row][col]
+
+	def set_from_tuple(self,gameTuple):
+		self.current_player = gameTuple[0]
+		self.captured_by_dark_num = gameTuple[1]
+		self.captured_by_light_num = gameTuple[2]
+
+		for row in range(BOARD_LEN):
+			for col in range(BOARD_LEN):
+				self.board[row][col] = gameTuple[3 + row*BOARD_LEN + col]
+
 	def setup_pieces(self):
 		for n in range(BOARD_LEN//2):
 			self.board[0][2*n] = PIECE_DARK
@@ -76,18 +95,12 @@ class Checkers_Game:
 			self.board[BOARD_LEN-2][2*n] = PIECE_LIGHT
 			self.board[BOARD_LEN-3][2*n+1] = PIECE_LIGHT
 
-	def __iter__(self):
-		for row in range(BOARD_LEN):
-			for col in range(BOARD_LEN):
-				yield self.board[row][col]
-
 	def get_piece_moves(self,row,col,alreadyHopped):
 		if not self.board[row][col]:
 			return []
 
 		piece_moves = []
 		piece_col = PLAYER_DARK if self.board[row][col] > 0 else PLAYER_LIGHT
-
 
 		for rowOffset in range(-1,2,2):
 
@@ -216,6 +229,7 @@ class Checkers_Game:
 	def get_player_score(self,player):
 
 		score = self.captured_by_dark_num - self.captured_by_light_num
+		#score = 0
 
 		for row in range(BOARD_LEN):
 			for col in range(BOARD_LEN):

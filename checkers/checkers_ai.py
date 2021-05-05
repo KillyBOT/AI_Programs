@@ -4,7 +4,7 @@ import copy
 import random
 
 MAX_DEPTH = 7
-SEARCH_NUM = 300
+SEARCH_NUM = 1000
 
 current_node = None
 
@@ -62,11 +62,12 @@ class MCTS_Node:
 		new = copy.deepcopy(self.game)
 
 		while not new.get_state():
-			moves = new.get_moves()
+			"""moves = new.get_moves()
 			if moves:
 				new.do_move(random.choice(moves))
 			else:
-				new.do_move(None)
+				new.do_move(None)"""
+			new.do_move(random.choice(new.get_moves()))
 
 		return new.get_state()
 
@@ -131,14 +132,12 @@ class MCTS_Node:
 				maxSimulations = child.s
 				bestChild = child
 
-		current_node = bestChild
-
 		for move in self.game.get_moves():
 			new = copy.deepcopy(self.game)
 			new.do_move(move)
 
 			if new == bestChild.game:
-				return move
+				return move, bestChild
 
 def get_random_move(game):
 
